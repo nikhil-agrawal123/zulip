@@ -21,7 +21,8 @@ if [[ ! -e /usr/share/doc/groonga-apt-source/copyright ]]; then
                 | cut --delimiter=: --fields=10 \
                 | head --lines=1
         )
-        # Read distro info. Use separate subshells so that multi-word 
+        # Read distro info.
+        # values don't break command substitution.
         distribution="$(. /etc/os-release && printf '%s' "$ID")"
         distribution_like="$(. /etc/os-release && printf '%s' "${ID_LIKE:-}")"
         release="$(. /etc/os-release && printf '%s' "$VERSION_CODENAME")"
