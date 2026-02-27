@@ -21,11 +21,21 @@ if [[ ! -e /usr/share/doc/groonga-apt-source/copyright ]]; then
                 | cut --delimiter=: --fields=10 \
                 | head --lines=1
         )
-        os_info="$(. /etc/os-release && printf '%s\n' "$ID" "$VERSION_CODENAME")"
-        {
-            read -r distribution
-            read -r release
-        } <<<"$os_info"
+        # Read distro info. Use separate subshells so that multi-word
+        # ID_LIKE values (e.g. "ubuntu debian") don't break parsing.
+        distribution="$(. /etc/os-release && printf '%s' "$ID")"
+        distribution_like="$(. /etc/os-release && printf '%s' "${ID_LIKE:-}")"
+        release="$(. /etc/os-release && printf '%s' "$VERSION_CODENAME")"
+
+        # Groonga only publishes packages for ubuntu/debian, not
+        # derivative distros like Pop!_OS. Map to the parent distro.
+        if [[ "$distribution" != "ubuntu" && "$distribution" != "debian" ]]; then
+            if [[ "$distribution_like" == *"ubuntu"* ]]; then
+                distribution=ubuntu
+            elif [[ "$distribution_like" == *"debian"* ]]; then
+                distribution=debian
+            fi
+        fi
 
         groonga_apt_source_deb="groonga-apt-source-latest-$release.deb"
         groonga_apt_source_deb_sign="$groonga_apt_source_deb.asc.$pgroonga_apt_sign_key_fingerprint"
