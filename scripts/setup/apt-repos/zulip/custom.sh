@@ -22,17 +22,28 @@ if [[ ! -e /usr/share/doc/groonga-apt-source/copyright ]]; then
                 | head --lines=1
         )
         # Read distro info.
-        # values don't break command substitution.
-        distribution="$(. /etc/os-release && printf '%s' "$ID")"
-        distribution_like="$(. /etc/os-release && printf '%s' "${ID_LIKE:-}")"
-        release="$(. /etc/os-release && printf '%s' "$VERSION_CODENAME")"
+        os_info="$(
+            . /etc/os-release
+            printf '%s\n' "$ID" "${ID_LIKE:-}" "$VERSION_CODENAME" "${UBUNTU_CODENAME:-}"
+        )"
+        {
+            read -r distribution
+            read -r distribution_like
+            read -r release
+            read -r ubuntu_codename || true
+        } <<<"$os_info"
 
-        if [[ "$distribution" != "ubuntu" && "$distribution" != "debian" ]]; then
-            if [[ "$distribution_like" == *"ubuntu"* ]]; then
+        case " $distribution $distribution_like " in
+            *' ubuntu '*)
                 distribution=ubuntu
-            elif [[ "$distribution_like" == *"debian"* ]]; then
+                ;;
+            *' debian '*)
                 distribution=debian
-            fi
+                ;;
+        esac
+        # Use UBUNTU_CODENAME for Ubuntu derivatives like Linux Mint.
+        if [[ "$distribution" == "ubuntu" && -n "$ubuntu_codename" ]]; then
+            release="$ubuntu_codename"
         fi
 
         groonga_apt_source_deb="groonga-apt-source-latest-$release.deb"
